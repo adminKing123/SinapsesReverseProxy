@@ -29,19 +29,26 @@ def create_app(config_class: type = Config) -> Flask:
         resources={
             r"/api/syncore/open/*": {
                 "origins": "*",
-                "methods": ["GET", "POST", "OPTIONS"],
+                "methods": ["GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"],
                 "allow_headers": ["Content-Type", "X-Service-Key", "Authorization"],
-            }
+            },
+            r"/api/syncore/temp/*": {
+                "origins": "*",
+                "methods": ["GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"],
+                "allow_headers": ["Content-Type", "X-Service-Key", "Authorization"],
+            },
         },
     )
 
     from app.routes.docs import docs_bp
     from app.routes.health import health_bp
     from app.routes.syncore_open import syncore_open_bp
+    from app.routes.temp_user_logs import temp_logs_bp
 
     app.register_blueprint(docs_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(syncore_open_bp)
+    app.register_blueprint(temp_logs_bp)
 
     if os.environ.get("FLASK_ENV") == "development" or app.debug:
         logging.basicConfig(level=logging.INFO)

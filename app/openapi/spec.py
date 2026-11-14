@@ -62,6 +62,7 @@ def build_openapi_spec(server_url: str) -> dict[str, Any]:
             {"name": "Worklog"},
             {"name": "Other"},
             {"name": "Health"},
+            {"name": "Temp user logs"},
         ],
         "paths": {},
         "components": {
@@ -113,6 +114,28 @@ def build_openapi_spec(server_url: str) -> dict[str, Any]:
                     "type": "object",
                     "properties": {
                         "override_comment": {"type": "string", "default": ""},
+                    },
+                },
+                "TempLogCreate": {
+                    "type": "object",
+                    "required": ["log"],
+                    "properties": {
+                        "log": {"type": "string"},
+                        "date": {
+                            "type": "string",
+                            "description": "YYYY-MM-DD or MM/DD/YYYY; default today IST",
+                        },
+                        "keyword": {
+                            "type": "string",
+                            "description": "Prefix stripped from log before save",
+                        },
+                    },
+                },
+                "TempLogUpdate": {
+                    "type": "object",
+                    "properties": {
+                        "log": {"type": "string"},
+                        "date": {"type": "string"},
                     },
                 },
             },
@@ -443,5 +466,132 @@ def build_openapi_spec(server_url: str) -> dict[str, Any]:
         ],
     )
     emp_post("/worklog/fill", "Submit daily work log", "Worklog", "WorklogFill")
+
+    tpfx = "/api/syncore/temp"
+    syn_user = {
+        "name": "user_id",
+        "in": "path",
+        "required": True,
+        "schema": {"type": "string", "example": "560"},
+        "description": "SynCore HRMS user_id (from syncore_employees.user_id)",
+    }
+
+    add(
+        f"{tpfx}/",
+        "get",
+        {"tags": ["Temp user logs"], "summary": "Temp logs API index", "responses": _json_ok()},
+    )
+
+    log_id_param = {
+        "name": "log_id",
+        "in": "path",
+        "required": True,
+        "schema": {"type": "integer"},
+    }
+
+    add(
+        f"{tpfx}/users/{{user_id}}/logs",
+        "get",
+        {
+            "tags": ["Temp user logs"],
+            "summary": "List temp logs",
+            "parameters": [
+                syn_user,
+                {"name": "date", "in": "query", "schema": {"type": "string"}},
+                {"name": "start_date", "in": "query", "schema": {"type": "string"}},
+                {"name": "end_date", "in": "query", "schema": {"type": "string"}},
+                {"name": "page", "in": "query", "schema": {"type": "integer", "default": 1}},
+                {
+                    "name": "per_page",
+                    "in": "query",
+                    "schema": {"type": "integer", "default": 50, "maximum": 200},
+                },
+            ],
+            "responses": {**_json_ok(), **_error_responses()},
+        },
+    )
+    add(
+        f"{tpfx}/users/{{user_id}}/logs",
+        "post",
+        {
+            "tags": ["Temp user logs"],
+            "summary": "Create temp log",
+            "parameters": [syn_user],
+            "requestBody": {
+                "required": True,
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": "#/components/schemas/TempLogCreate"}
+                    }
+                },
+            },
+            "responses": {**_json_ok(), "201": {"description": "Created"}, **_error_responses()},
+        },
+    )
+
+    for suffix, summary in [
+        ("/today", "Today's logs (IST)"),
+        ("/today/text", "Today's logs as plain text"),
+        ("/current-month", "Current month logs (IST)"),
+    ]:
+        add(
+            f"{tpfx}/users/{{user_id}}/logs{suffix}",
+            "get",
+            {
+                "tags": ["Temp user logs"],
+                "summary": summary,
+                "parameters": [syn_user],
+                "responses": {**_json_ok(), **_error_responses()},
+            },
+        )
+
+    add(
+        f"{tpfx}/users/{{user_id}}/logs/purge",
+        "delete",
+        {
+            "tags": ["Temp user logs"],
+            "summary": "Purge all logs for user",
+            "parameters": [syn_user],
+            "responses": {**_json_ok(), **_error_responses()},
+        },
+    )
+    add(
+        f"{tpfx}/users/{{user_id}}/logs/{{log_id}}",
+        "get",
+        {
+            "tags": ["Temp user logs"],
+            "summary": "Get one temp log",
+            "parameters": [syn_user, log_id_param],
+            "responses": {**_json_ok(), **_error_responses()},
+        },
+    )
+    for method in ("put", "patch"):
+        add(
+            f"{tpfx}/users/{{user_id}}/logs/{{log_id}}",
+            method,
+            {
+                "tags": ["Temp user logs"],
+                "summary": "Update temp log",
+                "parameters": [syn_user, log_id_param],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/TempLogUpdate"}
+                        }
+                    },
+                },
+                "responses": {**_json_ok(), **_error_responses()},
+            },
+        )
+    add(
+        f"{tpfx}/users/{{user_id}}/logs/{{log_id}}",
+        "delete",
+        {
+            "tags": ["Temp user logs"],
+            "summary": "Delete temp log",
+            "parameters": [syn_user, log_id_param],
+            "responses": {**_json_ok(), **_error_responses()},
+        },
+    )
 
     return spec
