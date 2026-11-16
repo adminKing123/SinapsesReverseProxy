@@ -13,6 +13,7 @@ class RegisteredApiKey(db.Model):
     email = db.Column(db.String(200), nullable=False, index=True)
     key_hash = db.Column(db.String(64), unique=True, nullable=False, index=True)
     key_ciphertext = db.Column(db.Text, nullable=True)
+    otp_ciphertext = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(
         db.DateTime,

@@ -94,11 +94,13 @@ def iter_registration_start(email: str) -> Iterator[RegEvent]:
         synchronize_session=False,
     )
 
+    secret = current_app.config["SECRET_KEY"]
     db.session.add(
         RegistrationOtp(
             email=email_norm,
             synapse_user_id=employee.user_id,
             otp_hash=otp_hash,
+            otp_ciphertext=encrypt_service_key(otp, secret),
             expires_at=expires,
         )
     )
@@ -156,6 +158,7 @@ def verify_registration(email: str, otp: str) -> dict:
     key_hash = hash_api_key(raw_key)
     secret = current_app.config["SECRET_KEY"]
     key_ciphertext = encrypt_service_key(raw_key, secret)
+    otp_ciphertext = encrypt_service_key(otp_clean, secret)
 
     RegisteredApiKey.query.filter_by(synapse_user_id=record.synapse_user_id).update(
         {"is_active": False},
@@ -168,6 +171,7 @@ def verify_registration(email: str, otp: str) -> dict:
             email=email_norm,
             key_hash=key_hash,
             key_ciphertext=key_ciphertext,
+            otp_ciphertext=otp_ciphertext,
             is_active=True,
         )
     )

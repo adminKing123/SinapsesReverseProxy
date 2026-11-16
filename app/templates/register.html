@@ -35,20 +35,26 @@
       padding: 0.875rem 1.5rem;
     }
     .site-header-inner {
-      max-width: 42rem;
+      max-width: 72rem;
       margin: 0 auto;
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       gap: 1rem;
+      flex-wrap: wrap;
     }
     .site-header .brand {
       font-weight: 600;
       font-size: 0.9375rem;
       color: var(--text);
     }
-    .site-header a {
+    .site-header nav {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
       font-size: 0.875rem;
+    }
+    .site-header a {
       color: var(--accent);
       text-decoration: none;
     }
@@ -261,8 +267,12 @@
 <body>
   <header class="site-header">
     <div class="site-header-inner">
-      <span class="brand">SynCore Proxy</span>
-      <a href="/api-docs">API docs</a>
+      <a href="/register" class="brand" style="text-decoration:none;color:inherit;">SynCore Proxy</a>
+      <nav>
+        <a href="/register">Register</a>
+        <a href="/api-docs">API docs</a>
+        <a href="{{ url_for('admin.login', next=url_for('admin.registered_users')) }}">Registered users</a>
+      </nav>
     </div>
   </header>
 
@@ -320,7 +330,7 @@
     <div id="otp-section">
       <div class="field">
         <label for="otp">Verification code</label>
-        <p class="hint">Six digits. Check server logs if email is not configured yet.</p>
+        <p class="hint">Six digits. If email does not arrive, ask your admin for the code from Registered users.</p>
         <input id="otp" class="otp" type="text" inputmode="numeric" maxlength="6" placeholder="······" autocomplete="one-time-code" />
       </div>
       <button type="button" class="btn" id="btn-verify">

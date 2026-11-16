@@ -31,6 +31,10 @@
     .pager a.disabled { color: var(--muted); pointer-events: none; }
     .pager strong { color: var(--text); }
     .empty { padding: 2rem 0; color: var(--muted); }
+    h2 { margin: 2.5rem 0 0.35rem; font-size: 1.125rem; }
+    h2:first-of-type { margin-top: 0; }
+    .otp-pending { font-size: 1.125rem; font-weight: 600; letter-spacing: 0.2em; }
+    .note { font-size: 0.8125rem; color: var(--muted); max-width: 40rem; margin: 0 0 1rem; line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -40,6 +44,7 @@
       <nav>
         <a href="/register">Register</a>
         <a href="/api-docs">API docs</a>
+        <a href="{{ url_for('admin.registered_users') }}">Registered users</a>
         <form method="post" action="{{ url_for('admin.logout') }}">
           <button type="submit" class="link-btn">Sign out</button>
         </form>
@@ -47,7 +52,38 @@
     </div>
   </header>
   <main>
-    <h1>Registered users</h1>
+    <h2>Pending verification codes</h2>
+    <p class="note">When email is not working, share the code below with the user on <a href="/register">Register</a>. Each code is valid for 10 minutes.</p>
+    {% if pending_otps %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Sent (UTC)</th>
+            <th>Expires (UTC)</th>
+            <th>Email</th>
+            <th>User ID</th>
+            <th>OTP</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in pending_otps %}
+          <tr>
+            <td class="mono">{{ row.created_at.strftime('%Y-%m-%d %H:%M:%S') if row.created_at else '—' }}</td>
+            <td class="mono">{{ row.expires_at.strftime('%Y-%m-%d %H:%M:%S') if row.expires_at else '—' }}</td>
+            <td>{{ row.email }}</td>
+            <td class="mono">{{ row.user_id }}</td>
+            <td class="mono otp-pending">{{ row.otp }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty" style="padding: 0.75rem 0 1.5rem;">No active codes. User must click “Send verification code” first.</p>
+    {% endif %}
+
+    <h2>Registered users</h2>
     <p class="meta">Newest first · {{ pagination.total }} record{{ pagination.total != 1 and 's' or '' }}</p>
 
     {% if rows %}
@@ -58,6 +94,7 @@
             <th>Created (UTC)</th>
             <th>Email</th>
             <th>User ID</th>
+            <th>OTP</th>
             <th>Service key</th>
             <th>Status</th>
           </tr>
@@ -68,6 +105,7 @@
             <td class="mono">{{ row.created_at.strftime('%Y-%m-%d %H:%M:%S') if row.created_at else '—' }}</td>
             <td>{{ row.email }}</td>
             <td class="mono">{{ row.user_id }}</td>
+            <td class="mono">{{ row.otp }}</td>
             <td class="mono">{{ row.service_key }}</td>
             <td><span class="tag{% if not row.is_active %} inactive{% endif %}">{% if row.is_active %}Active{% else %}Replaced{% endif %}</span></td>
           </tr>

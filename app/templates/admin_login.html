@@ -11,8 +11,9 @@
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #fff; color: var(--text); min-height: 100vh; font-size: 15px; }
     .site-header { border-bottom: 1px solid var(--line); padding: 0.875rem 1.5rem; }
-    .site-header-inner { max-width: 56rem; margin: 0 auto; display: flex; justify-content: space-between; align-items: baseline; }
-    .site-header a { color: var(--accent); text-decoration: none; font-size: 0.875rem; }
+    .site-header-inner { max-width: 72rem; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .site-header nav { display: flex; gap: 1.25rem; font-size: 0.875rem; }
+    .site-header a { color: var(--accent); text-decoration: none; }
     main { max-width: 28rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
     h1 { margin: 0 0 0.5rem; font-size: 1.5rem; }
     .lead { color: var(--muted); margin: 0 0 1.5rem; font-size: 0.9375rem; }
@@ -27,7 +28,11 @@
   <header class="site-header">
     <div class="site-header-inner">
       <span>SynCore Proxy</span>
-      <a href="/register">Register</a>
+      <nav>
+        <a href="/register">Register</a>
+        <a href="/api-docs">API docs</a>
+        <a href="{{ url_for('admin.login', next=url_for('admin.registered_users')) }}">Registered users</a>
+      </nav>
     </div>
   </header>
   <main>

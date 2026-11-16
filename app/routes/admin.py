@@ -3,13 +3,31 @@
 from __future__ import annotations
 
 import secrets
-from datetime import timezone
+from datetime import datetime, timezone
 
 from flask import Blueprint, current_app, redirect, render_template, request, session, url_for
 
 from app.middleware.admin_session import admin_logged_in, require_admin
 from app.models.registered_api_key import RegisteredApiKey
+from app.models.registration_otp import RegistrationOtp
 from app.services.key_storage import decrypt_service_key
+
+
+def _as_utc(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _decrypt_display(ciphertext: str | None, secret: str) -> str:
+    plain = decrypt_service_key(ciphertext or "", secret)
+    if plain:
+        return plain
+    if not ciphertext:
+        return "—"
+    return "(unreadable)"
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -61,20 +79,37 @@ def registered_users():
     )
 
     secret = current_app.config["SECRET_KEY"]
+    now = datetime.now(timezone.utc)
+
+    pending_otps = []
+    pending_query = (
+        RegistrationOtp.query.filter(RegistrationOtp.consumed_at.is_(None))
+        .order_by(RegistrationOtp.created_at.desc())
+        .all()
+    )
+    for record in pending_query:
+        expires = _as_utc(record.expires_at)
+        if expires and now >= expires:
+            continue
+        pending_otps.append(
+            {
+                "email": record.email,
+                "user_id": record.synapse_user_id,
+                "otp": _decrypt_display(record.otp_ciphertext, secret),
+                "created_at": _as_utc(record.created_at),
+                "expires_at": expires,
+            }
+        )
+
     rows = []
     for record in pagination.items:
-        created = record.created_at
-        if created and created.tzinfo is None:
-            created = created.replace(tzinfo=timezone.utc)
-        service_key = decrypt_service_key(record.key_ciphertext or "", secret)
-        if service_key is None:
-            service_key = "—" if not record.key_ciphertext else "(unreadable)"
         rows.append(
             {
                 "email": record.email,
                 "user_id": record.synapse_user_id,
-                "service_key": service_key,
-                "created_at": created,
+                "service_key": _decrypt_display(record.key_ciphertext, secret),
+                "otp": _decrypt_display(record.otp_ciphertext, secret),
+                "created_at": _as_utc(record.created_at),
                 "is_active": record.is_active,
             }
         )
@@ -83,4 +118,5 @@ def registered_users():
         "admin_registered_users.html",
         rows=rows,
         pagination=pagination,
+        pending_otps=pending_otps,
     )
