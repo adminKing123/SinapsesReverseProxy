@@ -42,11 +42,13 @@ def create_app(config_class: type = Config) -> Flask:
 
     from app.routes.docs import docs_bp
     from app.routes.health import health_bp
+    from app.routes.register import register_bp
     from app.routes.syncore_open import syncore_open_bp
     from app.routes.temp_user_logs import temp_logs_bp
 
     app.register_blueprint(docs_bp)
     app.register_blueprint(health_bp)
+    app.register_blueprint(register_bp)
     app.register_blueprint(syncore_open_bp)
     app.register_blueprint(temp_logs_bp)
 

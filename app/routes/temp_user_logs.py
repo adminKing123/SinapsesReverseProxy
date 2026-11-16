@@ -12,6 +12,7 @@ from datetime import date, datetime, timedelta
 from flask import Blueprint, Response, current_app, jsonify, request
 
 from app.extensions import db
+from app.middleware.scope import require_synapse_user_id
 from app.middleware.service_key import require_service_key
 from app.models.employee import SynCoreEmployee
 from app.models.temp_user_log import TempUserLog
@@ -62,6 +63,9 @@ def _require_synapse_user(user_id: str):
     uid = str(user_id).strip()
     if not uid:
         return None, h.api_error("user_id is required", 400)
+    scope_err = require_synapse_user_id(uid)
+    if scope_err:
+        return None, scope_err
     employee = SynCoreEmployee.query.filter_by(user_id=uid).first()
     if not employee:
         return None, h.api_error(f"No SynCore employee found with user_id {uid!r}", 404)

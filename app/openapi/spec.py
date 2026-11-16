@@ -46,9 +46,10 @@ def build_openapi_spec(server_url: str) -> dict[str, Any]:
             "title": "Synapses SynCore Proxy API",
             "version": "1.0.0",
             "description": (
-                "JSON REST proxy for SynCore HRMS. Use **Authorize** to set "
-                "**X-Service-Key** (`SYNCORE_SERVICE_KEY` from server `.env`). "
-                "Run **POST /sync** first to populate local employee IDs."
+                "JSON REST proxy for SynCore HRMS. **Authorize** with an **admin** key "
+                "(`SYNCORE_SERVICE_KEY` in server `.env`) for full access, or a **per-user** key "
+                "from [Register](/register) (scoped to that HRMS `user_id`). "
+                "Admin must **POST /sync** before registration can find emails."
             ),
         },
         "servers": [{"url": server_url}],
@@ -63,6 +64,7 @@ def build_openapi_spec(server_url: str) -> dict[str, Any]:
             {"name": "Other"},
             {"name": "Health"},
             {"name": "Temp user logs"},
+            {"name": "Registration"},
         ],
         "paths": {},
         "components": {
@@ -593,5 +595,62 @@ def build_openapi_spec(server_url: str) -> dict[str, Any]:
             "responses": {**_json_ok(), **_error_responses()},
         },
     )
+
+    paths["/register"] = {
+        "get": {
+            "tags": ["Registration"],
+            "summary": "Registration UI",
+            "security": [],
+            "responses": {"200": {"description": "HTML registration page"}},
+        }
+    }
+    paths["/api/register/start"] = {
+        "post": {
+            "tags": ["Registration"],
+            "summary": "Start registration (SSE)",
+            "security": [],
+            "requestBody": {
+                "required": True,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "required": ["email"],
+                            "properties": {"email": {"type": "string", "format": "email"}},
+                        }
+                    }
+                },
+            },
+            "responses": {
+                "200": {
+                    "description": "SSE: log, user, webex, otp_sent, done",
+                    "content": {"text/event-stream": {"schema": {"type": "string"}}},
+                }
+            },
+        }
+    }
+    paths["/api/register/verify"] = {
+        "post": {
+            "tags": ["Registration"],
+            "summary": "Verify OTP and issue user service key",
+            "security": [],
+            "requestBody": {
+                "required": True,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "required": ["email", "otp"],
+                            "properties": {
+                                "email": {"type": "string"},
+                                "otp": {"type": "string", "example": "123456"},
+                            },
+                        }
+                    }
+                },
+            },
+            "responses": {"201": {"description": "Returns user_id and service_key"}},
+        }
+    }
 
     return spec

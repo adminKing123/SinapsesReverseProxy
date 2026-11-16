@@ -12,6 +12,7 @@ from datetime import datetime
 from flask import Blueprint, Response, current_app, jsonify, request, stream_with_context
 
 from app.extensions import db
+from app.middleware.scope import require_admin, require_email_access, require_employee_access
 from app.middleware.service_key import require_service_key
 from app.models.employee import SynCoreEmployee
 from app.routes import helpers as h
@@ -40,6 +41,12 @@ def _get_employee(employee_id: int) -> SynCoreEmployee:
         from flask import abort
 
         abort(404)
+    scope_err = require_employee_access(employee)
+    if scope_err:
+        from flask import abort
+
+        body = scope_err[0].get_json()
+        abort(scope_err[1], description=body.get("error", "Forbidden"))
     return employee
 
 
@@ -64,6 +71,9 @@ def index():
 
 @syncore_open_bp.route("/stats")
 def stats():
+    admin_err = require_admin()
+    if admin_err:
+        return admin_err
     last_synced = db.session.query(db.func.max(SynCoreEmployee.last_synced_at)).scalar()
     return jsonify(
         {
@@ -77,6 +87,9 @@ def stats():
 
 @syncore_open_bp.route("/employees")
 def list_employees():
+    admin_err = require_admin()
+    if admin_err:
+        return admin_err
     q = request.args.get("q", "").strip()
     status_filter = request.args.get("status", "all")
     page = request.args.get("page", 1, type=int)
@@ -120,6 +133,9 @@ def employee_by_email():
     email = request.args.get("email", "").strip().lower()
     if not email:
         return h.api_error("email query parameter is required", 400)
+    email_err = require_email_access(email)
+    if email_err:
+        return email_err
     employee = SynCoreEmployee.query.filter(
         db.func.lower(SynCoreEmployee.email) == email
     ).first()
@@ -136,15 +152,10 @@ def employee_detail(employee_id: int):
 
 @syncore_open_bp.route("/sync", methods=["POST"])
 def sync_employees():
-    """
-    Stream employee sync progress as Server-Sent Events (HTTP 200).
-
-    Events:
-        log      — {level, message}
-        progress — {current, total, employee_id, name, action}
-        done     — {success, stats, message} (terminal)
-        error    — {success, error} (fatal, before done)
-    """
+    """Stream employee sync as SSE (admin key only)."""
+    admin_err = require_admin()
+    if admin_err:
+        return admin_err
 
     @stream_with_context
     def generate():
