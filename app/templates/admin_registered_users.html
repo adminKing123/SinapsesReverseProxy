@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registered users — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --line: #e5e7eb; --text: #111827; --muted: #6b7280; --accent: #2563eb; --ok: #047857; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #fff; color: var(--text); font-size: 14px; }
+    .site-header { border-bottom: 1px solid var(--line); padding: 0.875rem 1.5rem; }
+    .site-header-inner { max-width: 72rem; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .site-header nav { display: flex; gap: 1rem; align-items: center; font-size: 0.875rem; }
+    .site-header a { color: var(--accent); text-decoration: none; }
+    .site-header form { margin: 0; }
+    .link-btn { background: none; border: none; color: var(--accent); font: inherit; cursor: pointer; padding: 0; }
+    main { max-width: 72rem; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+    h1 { margin: 0 0 0.35rem; font-size: 1.375rem; }
+    .meta { color: var(--muted); margin-bottom: 1.25rem; font-size: 0.875rem; }
+    .table-wrap { overflow-x: auto; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; min-width: 640px; }
+    th, td { text-align: left; padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); background: #fafafa; }
+    tr:last-child td { border-bottom: none; }
+    .mono { font-family: ui-monospace, Consolas, monospace; font-size: 0.8125rem; word-break: break-all; }
+    .tag { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--ok); }
+    .tag.inactive { color: var(--muted); }
+    .pager { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--muted); }
+    .pager a { color: var(--accent); text-decoration: none; margin: 0 0.25rem; }
+    .pager a.disabled { color: var(--muted); pointer-events: none; }
+    .pager strong { color: var(--text); }
+    .empty { padding: 2rem 0; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <span>SynCore Proxy · Admin</span>
+      <nav>
+        <a href="/register">Register</a>
+        <a href="/api-docs">API docs</a>
+        <form method="post" action="{{ url_for('admin.logout') }}">
+          <button type="submit" class="link-btn">Sign out</button>
+        </form>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <h1>Registered users</h1>
+    <p class="meta">Newest first · {{ pagination.total }} record{{ pagination.total != 1 and 's' or '' }}</p>
+
+    {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Created (UTC)</th>
+            <th>Email</th>
+            <th>User ID</th>
+            <th>Service key</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td class="mono">{{ row.created_at.strftime('%Y-%m-%d %H:%M:%S') if row.created_at else '—' }}</td>
+            <td>{{ row.email }}</td>
+            <td class="mono">{{ row.user_id }}</td>
+            <td class="mono">{{ row.service_key }}</td>
+            <td><span class="tag{% if not row.is_active %} inactive{% endif %}">{% if row.is_active %}Active{% else %}Replaced{% endif %}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      <span>
+        Page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages or 1 }}</strong>
+      </span>
+      <span>
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.registered_users', page=pagination.prev_num) }}">← Previous</a>
+        {% else %}
+        <a class="disabled" href="#">← Previous</a>
+        {% endif %}
+        {% if pagination.has_next %}
+        <a href="{{ url_for('admin.registered_users', page=pagination.next_num) }}">Next →</a>
+        {% else %}
+        <a class="disabled" href="#">Next →</a>
+        {% endif %}
+      </span>
+    </div>
+    {% else %}
+    <p class="empty">No registrations yet.</p>
+    {% endif %}
+  </main>
+</body>
+</html>

@@ -36,4 +36,5 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL") or _default_database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SYNCORE_SERVICE_KEY = os.environ.get("SYNCORE_SERVICE_KEY", "")
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
     SYN_CORE_CONFIG = load_syn_core_config()

@@ -12,6 +12,7 @@ class RegisteredApiKey(db.Model):
     synapse_user_id = db.Column(db.String(50), nullable=False, index=True)
     email = db.Column(db.String(200), nullable=False, index=True)
     key_hash = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    key_ciphertext = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(
         db.DateTime,

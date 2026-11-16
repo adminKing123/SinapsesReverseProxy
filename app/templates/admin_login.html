@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin login — SynCore Proxy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --line: #e5e7eb; --text: #111827; --muted: #6b7280; --accent: #2563eb; --err: #b91c1c; --field-bg: #f9fafb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #fff; color: var(--text); min-height: 100vh; font-size: 15px; }
+    .site-header { border-bottom: 1px solid var(--line); padding: 0.875rem 1.5rem; }
+    .site-header-inner { max-width: 56rem; margin: 0 auto; display: flex; justify-content: space-between; align-items: baseline; }
+    .site-header a { color: var(--accent); text-decoration: none; font-size: 0.875rem; }
+    main { max-width: 28rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    h1 { margin: 0 0 0.5rem; font-size: 1.5rem; }
+    .lead { color: var(--muted); margin: 0 0 1.5rem; font-size: 0.9375rem; }
+    label { display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; }
+    input[type="password"] { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: 6px; background: var(--field-bg); font-size: 1rem; }
+    input:focus { outline: none; border-color: var(--accent); background: #fff; }
+    .btn { margin-top: 1rem; padding: 0.55rem 1.15rem; border: none; border-radius: 6px; background: var(--accent); color: #fff; font-weight: 600; font-size: 0.9375rem; cursor: pointer; }
+    .error { color: var(--err); font-size: 0.875rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <span>SynCore Proxy</span>
+      <a href="/register">Register</a>
+    </div>
+  </header>
+  <main>
+    <h1>Admin login</h1>
+    <p class="lead">Registered API keys (admin only).</p>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="{{ url_for('admin.login', next=request.args.get('next')) }}">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required autofocus />
+      <button type="submit" class="btn">Sign in</button>
+    </form>
+  </main>
+</body>
+</html>

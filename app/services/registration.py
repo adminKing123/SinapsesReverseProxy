@@ -7,11 +7,14 @@ import secrets
 from collections.abc import Iterator
 from datetime import datetime, timedelta, timezone
 
+from flask import current_app
+
 from app.extensions import db
 from app.models.employee import SynCoreEmployee
 from app.models.registered_api_key import RegisteredApiKey
 from app.models.registration_otp import RegistrationOtp
 from app.services.api_keys import generate_api_key, hash_api_key
+from app.services.key_storage import encrypt_service_key
 from app.services.email_otp import send_otp_email
 from app.services.syncore import get_syn_core_client
 
@@ -151,6 +154,8 @@ def verify_registration(email: str, otp: str) -> dict:
 
     raw_key = generate_api_key()
     key_hash = hash_api_key(raw_key)
+    secret = current_app.config["SECRET_KEY"]
+    key_ciphertext = encrypt_service_key(raw_key, secret)
 
     RegisteredApiKey.query.filter_by(synapse_user_id=record.synapse_user_id).update(
         {"is_active": False},
@@ -162,6 +167,7 @@ def verify_registration(email: str, otp: str) -> dict:
             synapse_user_id=record.synapse_user_id,
             email=email_norm,
             key_hash=key_hash,
+            key_ciphertext=key_ciphertext,
             is_active=True,
         )
     )
